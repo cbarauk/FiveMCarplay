@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BCarplay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="audio-root" aria-hidden="true"></div>
+
+<div id="app" class="hidden">
+  <div class="panel" id="panel">
+   <div class="screen" id="screen">
+    <nav class="rail" id="rail">
+      <div class="clock" id="clock">12:00</div>
+      <div class="sig"><i></i><i></i><i></i><i></i><b>5G</b></div>
+      <div class="apps">
+        <button class="app a-playing active" data-tab="playing" title="Now Playing"><span data-icon="music"></span></button>
+        <button class="app a-search" data-tab="search" title="Search"><span data-icon="search"></span></button>
+        <button class="app a-library" data-tab="library" title="Library"><span data-icon="heart"></span></button>
+        <button class="app a-queue" data-tab="queue" title="Queue"><span data-icon="queue"></span></button>
+      </div>
+      <button class="home" id="closeBtn" title="Close (Esc)"><span data-icon="grid"></span></button>
+    </nav>
+
+    <section class="stage np" id="stage">
+      <header class="top">
+        <form class="searchbox" id="quickForm" autocomplete="off">
+          <span data-icon="search"></span>
+          <input id="quickInput" type="text" maxlength="300" placeholder="Song name or YouTube link" spellcheck="false">
+          <button type="button" class="go queue" id="quickQueue" title="Add to queue">Queue</button>
+          <button type="submit" class="go">Play</button>
+        </form>
+      </header>
+
+      <main id="view"></main>
+
+      <footer class="bar">
+        <div class="bar-track">
+          <div class="bar-art" id="barArt"></div>
+          <div class="bar-meta"><div id="barTitle" class="t">Nothing playing</div><div id="barArtist" class="a">&nbsp;</div></div>
+        </div>
+        <div class="bar-center">
+          <div class="ctrls">
+            <button class="icon-btn sm" id="bShuffle" title="Shuffle" data-icon="shuffle"></button>
+            <button class="icon-btn" id="bPrev" title="Previous" data-icon="prev"></button>
+            <button class="icon-btn play" id="bPlay" title="Play / Pause" data-icon="play"></button>
+            <button class="icon-btn" id="bNext" title="Next" data-icon="next"></button>
+            <button class="icon-btn sm" id="bLoop" title="Repeat" data-icon="repeat"></button>
+          </div>
+          <div class="seek">
+            <span id="tCur">0:00</span>
+            <div class="seekbar" id="seekbar"><div class="fill" id="seekFill"></div></div>
+            <span id="tDur">0:00</span>
+          </div>
+        </div>
+        <div class="bar-vol">
+          <button class="icon-btn sm" id="bLike" title="Like" data-icon="heart"></button>
+          <button class="icon-btn sm" id="bPlaylist" title="Add to playlist" data-icon="list"></button>
+          <div class="vrow"><span data-icon="vol"></span><input type="range" id="volCar" min="0" max="100" title="Volume"></div>
+          <button class="icon-btn sm" id="bStop" title="Stop" data-icon="stop"></button>
+        </div>
+      </footer>
+    </section>
+
+    <div class="sheet" id="sheet"></div>
+   </div>
+  </div>
+  <div id="toasts"></div>
+</div>
+
+<script>
+
+  if (typeof GetParentResourceName !== 'function') { document.write('<script src="dev.js"><\/script>'); }
+</script>
+<script src="audio.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
