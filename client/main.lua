@@ -5,6 +5,22 @@ local pending, reqCounter = {}, 0
 local masterVol = GetResourceKvpFloat('master') or Config.DefaultMasterVol
 if masterVol == 0 and not GetResourceKvpString('master') then masterVol = Config.DefaultMasterVol end
 
+local clockOffset = 0   -- serverTime - localCloudTime (seconds), keeps everyone on the SERVER's clock
+
+local function netNow() return GetCloudTimeAsInt() + clockOffset end
+
+RegisterNetEvent('bcarplay:timeRes', function(serverTime)
+    if type(serverTime) == 'number' then clockOffset = serverTime - GetCloudTimeAsInt() end
+    lastSig = ''  -- force a fresh audio push with the corrected clock
+end)
+
+CreateThread(function()
+    while true do
+        TriggerServerEvent('bcarplay:timeReq')
+        Wait(60000)
+    end
+end)
+
 local function clamp(v, a, b) return math.max(a, math.min(b, v)) end
 
 local function toast(msg, kind)
@@ -22,7 +38,7 @@ AddStateBagChangeHandler('bcarplay', nil, function(bagName, _, value)
     if not netId then return end
     Active[netId] = value or nil
     if uiOpen and netId == currentNetId then
-        SendNUIMessage({ action = 'state', state = value or false, cloudNow = GetCloudTimeAsInt() })
+        SendNUIMessage({ action = 'state', state = value or false, cloudNow = netNow() })
     end
 end)
 
@@ -92,7 +108,7 @@ local function pushAudio(force)
     local sig = table.concat(sigParts, '|')
     if force or sig ~= lastSig then
         lastSig = sig
-        SendNUIMessage({ action = 'audio', tracks = out, cloudNow = GetCloudTimeAsInt(), drift = Config.DriftTolerance })
+        SendNUIMessage({ action = 'audio', tracks = out, cloudNow = netNow(), drift = Config.DriftTolerance })
     end
     return nearest
 end
@@ -136,7 +152,7 @@ RegisterNetEvent('bcarplay:opened', function(netId, queue, index, loop, shuffle,
     SendNUIMessage({
         action = 'open', netId = netId, queue = queue, index = index, loop = loop, shuffle = shuffle,
         vol = vol, library = library, master = masterVol,
-        state = Active[netId] or false, cloudNow = GetCloudTimeAsInt(),
+        state = Active[netId] or false, cloudNow = netNow(),
     })
     CreateThread(function()
         while uiOpen do
@@ -195,7 +211,7 @@ RegisterNUICallback('saveLibrary', function(data, cb)
 end)
 
 RegisterNUICallback('ended', function(data, cb)
-    if data.netId and data.seq then TriggerServerEvent('bcarplay:ended', data.netId, data.seq, data.failed == true) end
+    if data.netId and data.seq then TriggerServerEvent('bcarplay:ended', data.netId, data.seq, data.failed == true, tonumber(data.duration) or 0) end
     cb({})
 end)
 

@@ -424,7 +424,7 @@
     if (e.key === 'Escape') { if (S.sheet) closeSheet(); else post('close'); }
   });
 
-  AudioEngine.onEnded = (key, seq, failed) => post('ended', { netId: key, seq, failed: !!failed });
+  AudioEngine.onEnded = (key, seq, failed) => post('ended', { netId: key, seq, failed: !!failed, duration: AudioEngine.getDuration(key) });
 
   let hideTimer = null;
   function showPanel() {

@@ -57,12 +57,25 @@ const AudioEngine = (() => {
           },
           onStateChange: e => {
             if (e.data === 1) { p.duration = e.target.getDuration() || p.duration; try { e.target.setPlaybackQuality('tiny'); } catch (_) {} }
-            if (e.data === 0) finish(p, false);
+            if (e.data === 0) {
+              const dur = e.target.getDuration() || p.duration || 0;
+              if (dur > 10 && target(p) < dur - 6) {
+                // ended far earlier than the shared timeline says: local fault, resume at the right spot
+                try { e.target.seekTo(target(p), true); e.target.playVideo(); } catch (_) {}
+              } else finish(p, false);
+            }
           },
           onError: () => finish(p, true),
         },
       });
     });
+  }
+
+  function seek(p, a, t) {
+    const n = Date.now();
+    if (p.lastSeek && n - p.lastSeek < 5000) return;   // never seek more than once per 5s (stops restart loops)
+    p.lastSeek = n;
+    a.seekTo(t, true);
   }
 
   function syncYT(p, first) {
@@ -72,14 +85,16 @@ const AudioEngine = (() => {
     if (p.lastVol !== vol) { a.setVolume(vol); p.lastVol = vol; }
     const t = target(p), st = a.getPlayerState();
     if (st === 0) return;
+    // listener clock is behind the server (track "starts in the future"): don't fight it by seeking to 0 over and over
+    const clockBehind = !p.paused && (Clock.now() - p.startedAt) < -1;
     if (p.paused) {
       if (st === 1 || st === 3) a.pauseVideo();
-      if (Math.abs(a.getCurrentTime() - t) > 1) a.seekTo(t, true);
+      if (Math.abs(a.getCurrentTime() - t) > 1) seek(p, a, t);
     } else if (st !== 1 && st !== 3) {
-      if (first || Math.abs(a.getCurrentTime() - t) > 1) a.seekTo(t, true);
+      if (!clockBehind && (first || Math.abs(a.getCurrentTime() - t) > 1)) seek(p, a, t);
       a.playVideo();
-    } else if (Math.abs(a.getCurrentTime() - t) > p.drift) {
-      a.seekTo(t, true);
+    } else if (!clockBehind && Math.abs(a.getCurrentTime() - t) > p.drift) {
+      seek(p, a, t);
     }
   }
 

@@ -410,7 +410,11 @@ RegisterNetEvent('bcarplay:control', function(netId, action, value)
     end
 end)
 
-RegisterNetEvent('bcarplay:ended', function(netId, seq, failed)
+RegisterNetEvent('bcarplay:timeReq', function()
+    TriggerClientEvent('bcarplay:timeRes', source, os.time())
+end)
+
+RegisterNetEvent('bcarplay:ended', function(netId, seq, failed, duration)
     local src = source
     local car = Cars[netId]
     if not car or not car.track or car.seq ~= seq then return end
@@ -419,6 +423,9 @@ RegisterNetEvent('bcarplay:ended', function(netId, seq, failed)
     local ped = GetPlayerPed(src)
     if #(GetEntityCoords(ped) - GetEntityCoords(veh)) > Config.HearDistance + 25.0 then return end
     if not failed and not car.paused and (now() - car.startedAt) < 5 then return end
+    -- a listener with a bad clock/buffering can report 'ended' early; only trust it near the real end
+    duration = tonumber(duration) or 0
+    if not failed and duration > 10 and (now() - car.startedAt) < duration - 8 then return end
     if failed then
         local subs = Subs[netId]
         if subs then for s in pairs(subs) do notify(s, 'Track could not be played - skipping', 'error') end end
